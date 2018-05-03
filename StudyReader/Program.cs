@@ -81,37 +81,11 @@ namespace StudyReader
                     var study = new Study
                     {
                         Name = GetStudyName(branch.FriendlyName),
-                        Modules = new List<Module>()
                     };
 
                     Console.WriteLine("{0}-{1}", counter-- ,study.Name);
 
-                    var modules = new List<string>();
-                    var regex = new Regex(modulesPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-                    repo.Index.ToList()
-                        .Where(x => regex.IsMatch(x.Path))
-                        .ToList()
-                        .ForEach(x =>
-                        {
-                            Console.WriteLine("\t\t" + x.Path);
-
-                            var moduleName = GetModuleName(x.Path);
-                            if (!modules.Contains(moduleName))
-                            {
-                                modules.Add(moduleName);
-                            }
-                        });
-
-                    modules.ForEach(x =>
-                    {
-                        Console.WriteLine("\t" + x);
-                        study.Modules.Add(new Module
-                        {
-                            Name = x,
-                            IsCustomized = CheckModuleIsCustomized(x)
-                        });
-                    });
+                    study.Modules = FindModules(repo);
 
                     studyList.Add(study);
 
@@ -119,6 +93,32 @@ namespace StudyReader
             }
 
             return studyList;
+        }
+
+        static List<Module> FindModules(Repository repo)
+        {
+            var modulesFindRegex = new Regex(modulesPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var modules = new List<string>();
+
+            repo.Index.ToList()
+                .Where(x => modulesFindRegex.IsMatch(x.Path))
+                .ToList()
+                .ForEach(x =>
+                {
+                    Console.WriteLine("\t\t" + x.Path);
+
+                    var moduleName = GetModuleName(x.Path);
+                    if (!modules.Contains(moduleName))
+                    {
+                        modules.Add(moduleName);
+                    }
+                });
+
+            return modules.Select(x =>
+            {
+                Console.WriteLine("\t" + x);
+                return new Module {Name = x, IsCustomized = CheckModuleIsCustomized(x)};
+            }).ToList();
         }
 
         static string GetModuleName(string path)
