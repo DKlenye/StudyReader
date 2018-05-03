@@ -68,7 +68,7 @@ namespace StudyReader
         {
             using (var repo = new Repository(pathToRepository))
             {
-                var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName)).Take(10).ToList();
+                var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName)).ToList();
                 var counter = remoteBranches.Count;
 
                 Console.WriteLine("Branch count - {0}", counter);
