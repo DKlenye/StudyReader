@@ -29,25 +29,22 @@ namespace StudyReader
         {
             var builder = new StringBuilder();
 
-            builder.Append(@"
+            builder.AppendLine(@"
             CREATE TABLE [dbo].[StudyModules](
 	            [Study] [nvarchar](250) NULL,
 	            [Module] [nvarchar](250) NULL,
                 [IsCustomized] [bit] NULL
-            ) ON [PRIMARY]
-            GO
-
-            ");
+            ) ON [PRIMARY]")
+            .AppendLine("GO");
 
             studies.ToList().ForEach(s =>
             {
                 s.Modules.ToList().ForEach(m =>
                 {
                     builder.AppendLine(string.Format(
-                        @"INSERT [dbo].[StudyModules] ([Study], [Module], [IsCustomized]) VALUES (N'{0}', N'{1}', {2})", s.Name, m.Name, m.IsCustomized ? 1 : 0));
-                    builder.AppendLine("GO");
+                        @"INSERT [dbo].[StudyModules] ([Study], [Module], [IsCustomized]) VALUES (N'{0}', N'{1}', {2})", s.Name, m.Name, m.IsCustomized ? 1 : 0))
+                    .AppendLine("GO");
                 });
-                
             });
 
             File.WriteAllText(sqlPath, builder.ToString());
@@ -119,7 +116,9 @@ namespace StudyReader
 
         static bool CheckModuleIsCustomized(string moduleName)
         {
-            return moduleName.Contains("_") || moduleName.Contains("-");
+            return moduleName.Contains("_") || 
+                moduleName.Contains("-") || 
+                moduleName.ToLower().Contains("custom");
         }
     }
 }
