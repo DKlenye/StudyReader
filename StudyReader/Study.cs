@@ -5,6 +5,6 @@ namespace StudyReader
     public class Study
     {
         public string Name { get; set; }
-        public IList<Module> Modules { get; set; }
+        public IEnumerable<Module> Modules { get; set; }
     }
 }

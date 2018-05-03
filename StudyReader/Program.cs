@@ -20,10 +20,12 @@ namespace StudyReader
 
         static void Main(string[] args)
         {
-            WriteToJson(ReadFromRepository());
+            var info = ReadFromRepository();
+            WriteToJson(info);
+            WriteToSql(info);
         }
 
-        static void WriteToSql(List<Study> studyList)
+        static void WriteToSql(IEnumerable<Study> studies)
         {
             var builder = new StringBuilder();
 
@@ -37,7 +39,7 @@ namespace StudyReader
 
             ");
 
-            studyList.ForEach(s =>
+            studies.ToList().ForEach(s =>
             {
                 s.Modules.ToList().ForEach(m =>
                 {
@@ -51,41 +53,40 @@ namespace StudyReader
             File.WriteAllText(sqlPath, builder.ToString());
         }
 
-        static void WriteToJson(List<Study> studyInfo)
+        static void WriteToJson(IEnumerable<Study> studyInfo)
         {
             File.WriteAllText(jsonPath, JsonConvert.SerializeObject(studyInfo, Formatting.Indented));
         }
 
-        static List<Study> ReadfromJson()
+        static IEnumerable<Study> ReadfromJson()
         {
             var json = File.ReadAllText(jsonPath);
             return JsonConvert.DeserializeObject<List<Study>>(json);
         }
 
-        static List<Study> ReadFromRepository()
+        static IEnumerable<Study> ReadFromRepository()
         {
             using (var repo = new Repository(pathToRepository))
             {
-                var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName)).ToList();
+                var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName)).Take(10).ToList();
                 var counter = remoteBranches.Count;
 
                 Console.WriteLine("Branch count - {0}", counter);
 
                 return remoteBranches.Select(branch =>
+                {
+                    Commands.Checkout(repo, branch);
+                    Console.WriteLine("{0}-{1}", counter--, branch.FriendlyName);
+                    return new Study
                     {
-                        Commands.Checkout(repo, branch);
-                        Console.WriteLine("{0}-{1}", counter--, branch.FriendlyName);
-                        return new Study
-                        {
-                            Name = GetStudyName(branch.FriendlyName),
-                            Modules = FindModules(repo)
-                        };
-                    })
-                    .ToList();
+                        Name = GetStudyName(branch.FriendlyName),
+                        Modules = FindModules(repo)
+                    };
+                });
             }
         }
 
-        static List<Module> FindModules(Repository repo)
+        static IEnumerable<Module> FindModules(Repository repo)
         {
             var modulesFindRegex = new Regex(modulesPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
@@ -101,7 +102,7 @@ namespace StudyReader
                 {
                     Console.WriteLine("\t" + x);
                     return new Module {Name = x, IsCustomized = CheckModuleIsCustomized(x)};
-                }).ToList();
+                });
         }
 
         static string GetModuleName(string path)
