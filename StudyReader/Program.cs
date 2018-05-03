@@ -64,61 +64,44 @@ namespace StudyReader
 
         static List<Study> ReadFromRepository()
         {
-            var studyList = new List<Study>();
-
             using (var repo = new Repository(pathToRepository))
             {
-                var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName))
-                    .ToList();
-                Console.WriteLine("Branch count - {0}", remoteBranches.Count);
-
+                var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName)).ToList();
                 var counter = remoteBranches.Count;
 
-                remoteBranches.ForEach(branch =>
-                {
-                    Commands.Checkout(repo, branch);
+                Console.WriteLine("Branch count - {0}", counter);
 
-                    var study = new Study
+                return remoteBranches.Select(branch =>
                     {
-                        Name = GetStudyName(branch.FriendlyName),
-                    };
-
-                    Console.WriteLine("{0}-{1}", counter-- ,study.Name);
-
-                    study.Modules = FindModules(repo);
-
-                    studyList.Add(study);
-
-                });
+                        Commands.Checkout(repo, branch);
+                        Console.WriteLine("{0}-{1}", counter--, branch.FriendlyName);
+                        return new Study
+                        {
+                            Name = GetStudyName(branch.FriendlyName),
+                            Modules = FindModules(repo)
+                        };
+                    })
+                    .ToList();
             }
-
-            return studyList;
         }
 
         static List<Module> FindModules(Repository repo)
         {
             var modulesFindRegex = new Regex(modulesPattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            var modules = new List<string>();
 
-            repo.Index.ToList()
+            return repo.Index.ToList()
                 .Where(x => modulesFindRegex.IsMatch(x.Path))
-                .ToList()
-                .ForEach(x =>
+                .Select(x =>
                 {
                     Console.WriteLine("\t\t" + x.Path);
-
-                    var moduleName = GetModuleName(x.Path);
-                    if (!modules.Contains(moduleName))
-                    {
-                        modules.Add(moduleName);
-                    }
-                });
-
-            return modules.Select(x =>
-            {
-                Console.WriteLine("\t" + x);
-                return new Module {Name = x, IsCustomized = CheckModuleIsCustomized(x)};
-            }).ToList();
+                    return GetModuleName(x.Path);
+                })
+                .Distinct()
+                .Select(x =>
+                {
+                    Console.WriteLine("\t" + x);
+                    return new Module {Name = x, IsCustomized = CheckModuleIsCustomized(x)};
+                }).ToList();
         }
 
         static string GetModuleName(string path)
@@ -137,6 +120,5 @@ namespace StudyReader
         {
             return moduleName.Contains("_") || moduleName.Contains("-");
         }
-        
     }
 }
