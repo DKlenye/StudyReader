@@ -99,7 +99,7 @@ namespace StudyReader
                 {
                     Console.WriteLine("\t" + x);
                     return new Module {Name = x, IsCustomized = CheckModuleIsCustomized(x)};
-                });
+                }).ToList();
         }
 
         static string GetModuleName(string path)
