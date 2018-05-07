@@ -12,7 +12,7 @@ namespace StudyReader
     class Program
     {
 
-        static readonly string pathToRepository = @"C:\projects\suvoda\suvoda-services.IRT\";
+        static readonly string pathToRepository = @"C:\_dev\suvoda-services.IRT\";
         static readonly string[] excludedBranches = { "origin/HEAD", "origin/master" };
         static readonly string modulesPattern = ".*modules[\\\\]suvoda[.]irt[.]modules.*[.]dll";
         private static readonly string jsonPath = "StudyModules.json";
@@ -79,7 +79,7 @@ namespace StudyReader
                         Name = GetStudyName(branch.FriendlyName),
                         Modules = FindModules(repo)
                     };
-                });
+                }).ToList();
             }
         }
 
