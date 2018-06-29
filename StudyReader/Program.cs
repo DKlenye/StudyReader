@@ -13,7 +13,8 @@ namespace StudyReader
     {
 
         static readonly string pathToRepository = @"C:\_dev\suvoda-services.IRT\";
-        static readonly string[] excludedBranches = { "origin/HEAD", "origin/master" };
+        static readonly string masterBranch = "origin/master";
+        static readonly string[] excludedBranches = { "origin/HEAD", masterBranch };
         static readonly string pathToModules = "app\\Suvoda.IRT\\Modules\\";
         static readonly string modulesPattern = ".*modules[\\\\]suvoda[.]irt[.]modules.*[.]dll";
         private static readonly string jsonPath = "StudyModules.json";
@@ -66,6 +67,9 @@ namespace StudyReader
         {
             using (var repo = new Repository(pathToRepository))
             {
+                resetRepository(repo);
+                switchToMaster(repo);
+
                 var remoteBranches = repo.Branches.Where(x => x.IsRemote && !excludedBranches.Contains(x.FriendlyName)).ToList();
                 var counter = remoteBranches.Count;
 
@@ -81,8 +85,7 @@ namespace StudyReader
                         Modules = FindModules(repo)
                     };
 
-                    Commit currentCommit = repo.Head.Tip;
-                    repo.Reset(ResetMode.Mixed, currentCommit);
+                    resetRepository(repo, ResetMode.Mixed);
 
                     return study;
                 }).ToList();
@@ -106,6 +109,17 @@ namespace StudyReader
                     Console.WriteLine("\t" + x);
                     return new Module {Name = x, IsCustomized = CheckModuleIsCustomized(x)};
                 }).ToList();
+        }
+
+        static void resetRepository(Repository repo, ResetMode resetMode = ResetMode.Hard)
+        {
+            Commit currentCommit = repo.Head.Tip;
+            repo.Reset(resetMode, currentCommit);
+        }
+
+        static void switchToMaster(Repository repo)
+        {
+            Commands.Checkout(repo, repo.Branches[masterBranch]);
         }
 
         static string GetModuleName(string path)
